@@ -1,5 +1,5 @@
 const { Message, User, Room } = require('../../models')
-const messageService = require('../../services/messageService')
+const messageController = require('../../controllers/messageController')
 
 module.exports = (io, socket) => {
   // 維持進入私人聊天是的狀態

@@ -7,45 +7,33 @@ const sequelize = require('sequelize')
 
 const { User } = require('../models')
 
-const userService = {
-  signUp: (req, res, callback) => {
+const userController = {
+  signUp: (req, res) => {
     // 確認輸入的密碼
     if (req.body.checkPassword !== req.body.password) {
-      return callback({ status: 'error', message: '兩次密碼輸入不同！' })
+      return res.json({ status: 'error', message: '兩次密碼輸入不同！' })
     }
 
     return User.findOne({ where: { account: req.body.account } }).then(user => {
       if (!user) {
-        // account找不到 >> 用Email找
-        return User.findOne({ where: { email: req.body.email } }).then(user => {
-          if (!user) {
-            // account找不到，Email找不到
-            return User.create({
-              account: req.body.account,
-              name: req.body.name,
-              email: req.body.email,
-              password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null)
-            })
-              .then(user => {
-                return callback({ status: 'success', message: '成功註冊帳號！' })
-              })
-              .catch(err => console.log(err))
-          }
-          // account找不到，Email找到
-          return callback({ status: 'error', message: 'email 已重覆註冊！' })
+        return User.create({
+          account: req.body.account,
+          name: req.body.name,
+          password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null)
         })
+          .then(user => {
+            return res.json({ status: 'success', message: '成功註冊帳號！' })
+          })
+          .catch(err => console.log(err))
       }
-      // account找到 >> 確認Email
-      user.email === req.body.email
-        ? callback({ status: 'error', message: 'email 和 account 已重覆註冊！' })
-        : callback({ status: 'error', message: 'account 已重覆註冊！' })
+      return res.json({ status: 'error', message: 'account 已重覆註冊！' })
     })
   },
 
-  signIn: (req, res, callback) => {
+  signIn: (req, res) => {
     // 檢查必要資料
     if (!req.body.account || !req.body.password) {
-      return callback({ status: 'error', message: '所有欄位皆為必填！' })
+      return res.json({ status: 'error', message: '所有欄位皆為必填！' })
     }
 
     // 檢查 user 是否存在與密碼是否正確
@@ -53,24 +41,22 @@ const userService = {
     const password = req.body.password
 
     User.findOne({ where: { account: account } }).then(async user => {
-      if (!user) return callback({ status: 'error', message: '帳號不存在或密碼錯誤！' })
-      if (user.role === 'admin') return callback({ status: 'error', message: '此帳號無法登入' })
+      if (!user) return res.json({ status: 'error', message: '帳號不存在或密碼錯誤！' })
+      if (user.role === 'admin') return res.json({ status: 'error', message: '此帳號無法登入' })
       if (!bcrypt.compareSync(password, user.password)) {
-        return callback({ status: 'error', message: '帳號不存在或密碼錯誤！' })
+        return res.json({ status: 'error', message: '帳號不存在或密碼錯誤！' })
       }
       // 簽發 token
       const payload = { id: user.id }
       const token = await jwt.sign(payload, process.env.JWT_SECRET)
-      return callback({
+      return res.json({
         status: 'success',
         message: '登入成功！',
         token: token,
         user: {
           id: user.id,
           account: user.account,
-          name: user.name,
-          email: user.email,
-          role: user.role
+          name: user.name
         }
       })
     })
@@ -168,4 +154,4 @@ const userService = {
   }
 }
 
-module.exports = userService
+module.exports = userController

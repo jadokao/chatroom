@@ -1,7 +1,7 @@
 const { User, Message } = require('../models')
 
-const messageService = {
-  getMessages: (req, res, callback) => {
+const messageController = {
+  getMessages: (req, res) => {
     return Message.findAll({
       raw: true,
       nest: true,
@@ -15,4 +15,4 @@ const messageService = {
   }
 }
 
-module.exports = messageService
+module.exports = messageController

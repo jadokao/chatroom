@@ -5,8 +5,7 @@ const jwt = require('jsonwebtoken')
 const passportJWT = require('passport-jwt')
 const ExtractJwt = passportJWT.ExtractJwt
 const JwtStrategy = passportJWT.Strategy
-const db = require('../models')
-const User = db.User
+const { User } = require('../models')
 
 // setup passport strategy
 passport.use(
@@ -34,14 +33,7 @@ passport.serializeUser((user, cb) => {
   cb(null, user.id)
 })
 passport.deserializeUser((id, cb) => {
-  User.findByPk(id, {
-    include: [
-      { model: User, as: 'Followers' },
-      { model: User, as: 'Followings' },
-      { model: User, as: 'Noticers' },
-      { model: User, as: 'Noticings' }
-    ]
-  }).then(user => {
+  User.findByPk(id).then(user => {
     user = user.toJSON()
     return cb(null, user)
   })
@@ -52,14 +44,7 @@ jwtOptions.jwtFromRequest = ExtractJwt.fromAuthHeaderAsBearerToken()
 jwtOptions.secretOrKey = process.env.JWT_SECRET
 
 const strategy = new JwtStrategy(jwtOptions, function (jwt_payload, next) {
-  User.findByPk(jwt_payload.id, {
-    include: [
-      { model: User, as: 'Followers' },
-      { model: User, as: 'Followings' },
-      { model: User, as: 'Noticers' },
-      { model: User, as: 'Noticings' }
-    ]
-  }).then(user => {
+  User.findByPk(jwt_payload.id).then(user => {
     if (!user) return next(null, false)
     return next(null, user)
   })

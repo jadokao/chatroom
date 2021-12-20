@@ -1,5 +1,5 @@
 const { Room, Message, User } = require('../../models')
-const messageService = require('../../services/messageService')
+const messageController = require('../../controllers/messageController')
 
 module.exports = (io, socket) => {
   // 監聽並提示有人進入公開聊天室
@@ -10,7 +10,7 @@ module.exports = (io, socket) => {
       where: { id: user.user.id },
       attributes: ['id', 'account', 'name', 'avatar']
     })
-    const messages = await messageService.getMessages()
+    const messages = await messageController.getMessages()
     socket.emit('getChatHistory', messages)
     socket.broadcast.emit('onlineHint', profile)
 
