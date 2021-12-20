@@ -1,5 +1,5 @@
-const { Member, Message, User } = require('../../models')
-//const messageService = require('../../services/messageService')
+const { Room, Message, User } = require('../../models')
+const messageService = require('../../services/messageService')
 
 module.exports = (io, socket) => {
   // 監聽並提示有人進入公開聊天室
