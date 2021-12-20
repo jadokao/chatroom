@@ -5,24 +5,20 @@ module.exports = (io, socket) => {
   // 監聽並提示有人進入公開聊天室
   socket.on('onlineHint', async user => {
     const profile = await User.findOne({
-      raw: true,
-      nest: true,
       where: { id: user.user.id },
-      attributes: ['id', 'account', 'name', 'avatar']
+      attributes: ['id', 'account', 'name', 'avatar', 'online']
     })
     const messages = await messageController.getMessages()
     socket.emit('getChatHistory', messages)
-    socket.broadcast.emit('onlineHint', profile)
+    socket.broadcast.emit('onlineHint', profile.toJSON())
 
     // 將 user 登入狀態寫進 DB
-    const [member, created] = await Member.findOrCreate({ where: { UserId: user.user.id, RoomId: 1 } })
-    await member.update({ online: true })
+    await profile.update({ online: true })
     // 再回傳正在聊天室裡的 member array
-    const members = await Member.findAll({
+    const members = await User.findAll({
       raw: true,
       nest: true,
       where: { online: true },
-      include: [{ model: User, attributes: ['id', 'name', 'account', 'avatar'] }],
       order: [['updatedAt', 'ASC']]
     })
     io.emit('onlineMember', members)
@@ -31,11 +27,10 @@ module.exports = (io, socket) => {
   // 監聽訊息
   socket.on('getMessage', async message => {
     console.log('服務端 接收 訊息: ', message)
-    await Member.findOrCreate({ where: { UserId: message.user.id, RoomId: 1 } })
     Message.create({
       content: message.content,
       UserId: message.user.id,
-      roomId: 1,
+      RoomId: 1,
       isRead: false
     }).then(message => {
       Message.findByPk(message.id, {
@@ -51,21 +46,17 @@ module.exports = (io, socket) => {
   //監聽並提示有人離開公開聊天室
   socket.on('offlineHint', async user => {
     const profile = await User.findOne({
-      raw: true,
-      nest: true,
       where: { id: user.user.id },
       attributes: ['id', 'account', 'name', 'avatar']
     })
-    io.emit('offlineHint', profile)
+    io.emit('offlineHint', profile.toJSON())
     // 將 user 登入狀態從 DB 移除
-    const member = await Member.findOne({ where: { UserId: user.user.id, RoomId: 1 } })
-    await member.update({ online: false })
+    await profile.update({ online: false })
     // 再回傳正在聊天室裡的 member array
-    const members = await Member.findAll({
+    const members = await User.findAll({
       raw: true,
       nest: true,
       where: { online: true },
-      include: [{ model: User, attributes: ['id', 'name', 'account', 'avatar'] }],
       order: [['updatedAt', 'ASC']]
     })
     io.emit('onlineMember', members)

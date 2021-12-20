@@ -1,3 +1,5 @@
+const passport = require('passport')
+const jwt = require('jsonwebtoken')
 const publicChat = require('./modules/publicChat')
 const privateChat = require('./modules/privateChat')
 
@@ -13,6 +15,25 @@ module.exports = server => {
       ]
     },
     allowEIO3: true
+  })
+
+  io.use((socket, next) => {
+    if (socket.handshake.headers.authorization) {
+      jwt.verify(
+        //jsonwebtoken用看是否有被串改的method
+        socket.handshake.headers.authorization, // 包在query 禮也可以在這看到socket.handshake.query
+        process.env.JWT_SECRET, //這是妳簽章的secret
+        async (err, decoded) => {
+          //認證失敗
+          if (err) {
+            return next(new Error('Authentication error'))
+          }
+          //認證成功
+          socket.decoded = decoded // 把解出來資訊做利用, {id: n, iat: m}
+          return next()
+        }
+      )
+    }
   })
 
   // 連線瀏覽器即產生 socket id
