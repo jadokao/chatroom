@@ -25,6 +25,6 @@ module.exports = app => {
   app.post('/signup', userController.signUp)
 
   app.get('/users', formatController.getUsers)
-  app.get('/messages', formatController.getMessages)
+  app.get('/messages', formatController.getAllMessages)
   app.get('/room', formatController.getRoom)
 }
