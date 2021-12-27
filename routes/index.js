@@ -1,4 +1,5 @@
 const passport = require('../config/passport')
+const formatController = require('../controllers/formatController')
 const userController = require('../controllers/userController')
 
 // 驗證user
@@ -22,4 +23,8 @@ module.exports = app => {
   })
   app.post('/signin', userController.signIn)
   app.post('/signup', userController.signUp)
+
+  app.get('/users', formatController.getUsers)
+  app.get('/messages', formatController.getMessages)
+  app.get('/room', formatController.getRoom)
 }
