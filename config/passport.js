@@ -14,7 +14,7 @@ passport.use(
 		{
 			usernameField: 'email',
 			passwordField: 'password',
-			passReqToCallback: true,
+			passReqToCallback: true
 		},
 		// authenticate user
 		(req, username, password, cb) => {

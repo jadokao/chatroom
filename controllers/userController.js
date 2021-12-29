@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken')
 
 const imgur = require('imgur-node-api')
 const IMGUR_CLIENT_ID = process.env.IMGUR_CLIENT_ID
-const sequelize = require('sequelize')
+const helpers = require('../_helpers')
 
 const { User } = require('../models')
 
@@ -19,7 +19,7 @@ const userController = {
 				return User.create({
 					account: req.body.account,
 					name: req.body.name,
-					password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null),
+					password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10), null)
 				})
 					.then(user => {
 						return res.json({ status: 'success', message: '成功註冊帳號！' })
@@ -56,35 +56,73 @@ const userController = {
 				user: {
 					id: user.id,
 					account: user.account,
-					name: user.name,
-				},
+					name: user.name
+				}
 			})
 		})
 	},
 
-	putUser: async (req, res, callback) => {
+	putUser: async (req, res) => {
 		try {
+			console.log(req.user)
 			if (Number(req.params.id) !== Number(helpers.getUser(req).id)) {
-				return callback({ status: 'error', message: '沒有編輯權限！' })
+				return res.json({ status: 'error', message: '沒有編輯權限！' })
 			}
 
-			const { name, introduction, avatar, cover } = req.body
+			// 提取request.body
+			const { account, name, avatar, password, checkPassword } = req.body
 			const { files } = req
 
-			const user = await User.findByPk(req.params.id)
-			// 如果user要把cover給刪掉，前端會回傳cover: delete
-			if (cover === 'delete') {
-				user.cover = 'https://i.imgur.com/Qqb0a7S.png'
+			// input驗證
+			if (account !== helpers.getUser(req).account) {
+				const existUser = await User.findOne({
+					where: { account },
+					raw: true
+				})
+				if (existUser) return res.json({ status: 'error', message: 'account 已重覆註冊！' })
+			}
+			if (password !== checkPassword) {
+				return res.json({ status: 'error', message: '兩次密碼輸入不同！' })
 			}
 
-			if (!files) {
+			const user = await User.findByPk(req.params.id)
+
+			// whether files and whether password
+			if (!files && !password) {
 				await user.update({
 					name,
-					introduction,
+					account,
 					avatar,
-					cover: user.cover,
+					password
 				})
-				return callback({ status: 'success', message: '使用者資料編輯成功！(沒傳圖）' })
+				return res.json({ status: 'success', message: '使用者資料編輯成功！(沒傳圖 + 沒改密碼）' })
+			} else if (!files && password) {
+				await user.update({
+					name,
+					account,
+					avatar,
+					password: bcrypt.hashSync(password, bcrypt.genSaltSync(10), null)
+				})
+				return res.json({ status: 'success', message: '使用者資料編輯成功！(沒傳圖 + 有改密碼）' })
+			} else if (!password) {
+				imgur.setClientID(IMGUR_CLIENT_ID)
+				const uploadImg = file => {
+					return new Promise((resolve, reject) => {
+						imgur.upload(file, (err, res) => {
+							resolve(res.data.link)
+						})
+					})
+				}
+
+				const newAvatar = files.avatar ? await uploadImg(files.avatar[0].path) : user.avatar
+
+				await user.update({
+					name,
+					account,
+					avatar: newAvatar,
+					password
+				})
+				return res.json({ status: 'success', message: '使用者資料編輯成功！(有傳圖 + 沒改密碼）' })
 			} else {
 				imgur.setClientID(IMGUR_CLIENT_ID)
 				const uploadImg = file => {
@@ -96,62 +134,20 @@ const userController = {
 				}
 
 				const newAvatar = files.avatar ? await uploadImg(files.avatar[0].path) : user.avatar
-				const newCover = files.cover ? await uploadImg(files.cover[0].path) : user.cover
 
 				await user.update({
 					name,
-					introduction,
+					account,
 					avatar: newAvatar,
-					cover: newCover,
+					password: bcrypt.hashSync(password, bcrypt.genSaltSync(10), null)
 				})
-				return callback({ status: 'success', message: '使用者資料編輯成功！(有傳圖）' })
+				return res.json({ status: 'success', message: '使用者資料編輯成功！(有傳圖 + 有改密碼）' })
 			}
-		} catch (err) {
-			return callback({ status: 'error', message: '編輯未成功！' })
-		}
-	},
-
-	putUserSetting: async (req, res, callback) => {
-		try {
-			const { name, account, email, password, checkPassword } = req.body
-			if (Number(req.params.id) !== Number(helpers.getUser(req).id)) {
-				return callback({ status: 'error', message: '沒有編輯權限！' })
-			}
-
-			if (account !== helpers.getUser(req).account) {
-				const existUser = await User.findOne({
-					where: { account },
-					raw: true,
-				})
-				if (existUser) return callback({ status: 'error', message: 'account 已重覆註冊！' })
-			}
-
-			if (email !== helpers.getUser(req).email) {
-				const existUser = await User.findOne({
-					where: { email },
-					raw: true,
-				})
-				if (existUser) return callback({ status: 'error', message: 'email 已重覆註冊！' })
-			}
-
-			if (password !== checkPassword) {
-				return callback({ status: 'error', message: '兩次密碼輸入不同！' })
-			}
-
-			const user = await User.findByPk(req.params.id)
-			await user.update({
-				name,
-				account,
-				email,
-				password: bcrypt.hashSync(password, bcrypt.genSaltSync(10), null),
-			})
-
-			return callback({ status: 'success', message: '使用者資料編輯成功！' })
 		} catch (err) {
 			console.log(err)
-			return callback({ status: 'error', message: '編輯未成功！' })
+			return res.json({ status: 'error', message: '編輯未成功！' })
 		}
-	},
+	}
 }
 
 module.exports = userController
