@@ -65,7 +65,6 @@ const userController = {
 
 	putUser: async (req, res) => {
 		try {
-			console.log(req.user)
 			if (Number(req.params.id) !== Number(helpers.getUser(req).id)) {
 				return res.json({ status: 'error', message: '沒有編輯權限！' })
 			}
