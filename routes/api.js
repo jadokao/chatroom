@@ -30,7 +30,7 @@ router.get('/chatroom', (req, res) => {
 router.post('/signin', userController.signIn)
 router.post('/signup', userController.signUp)
 
-router.post('/users/:id/edit', userController.putUser)
+router.post('/users/:id/edit', authenticated, userController.putUser)
 
 router.get('/users', formatController.getUsers)
 router.get('/messages', formatController.getAllMessages)

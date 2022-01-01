@@ -56,7 +56,8 @@ const userController = {
 				user: {
 					id: user.id,
 					account: user.account,
-					name: user.name
+					name: user.name,
+					avatar: user.avatar
 				}
 			})
 		})
