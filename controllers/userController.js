@@ -153,12 +153,11 @@ const userController = {
 	searchUser: (req, res) => {
 		const user = req.body.account
 
-		User.findOne({
+		User.findAll({
 			raw: true,
 			nest: true,
-			where: { [Op.regexp]: [{ account: `[a-z0-9]?${user}[a-z0-9]?` }] }
+			where: { account: { [Op.regexp]: [`[a-z0-9]?${user}[a-z0-9]?`] } }
 		}).then(user => {
-			console.log(user)
 			return res.json(user)
 		})
 	}
