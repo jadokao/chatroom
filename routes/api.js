@@ -31,6 +31,7 @@ router.post('/signin', userController.signIn)
 router.post('/signup', userController.signUp)
 
 router.post('/users/:id/edit', authenticated, uploadImage, userController.putUser)
+router.post('/users/search', authenticated, userController.searchUser)
 
 router.get('/users', formatController.getUsers)
 router.get('/messages', formatController.getAllMessages)

@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
+const Op = require('sequelize').Op
 
 const imgur = require('imgur-node-api')
 const IMGUR_CLIENT_ID = process.env.IMGUR_CLIENT_ID
@@ -147,6 +148,19 @@ const userController = {
 			console.log(err)
 			return res.json({ status: 'error', message: '編輯未成功！' })
 		}
+	},
+
+	searchUser: (req, res) => {
+		const user = req.body.account
+
+		User.findOne({
+			raw: true,
+			nest: true,
+			where: { [Op.regexp]: [{ account: `[a-z0-9]?${user}[a-z0-9]?` }] }
+		}).then(user => {
+			console.log(user)
+			return res.json(user)
+		})
 	}
 }
 
