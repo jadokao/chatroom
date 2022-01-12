@@ -14,7 +14,7 @@ const messageController = {
 		})
 	},
 
-	getPrivateMessages: (req, res) => {
+	getPrivateMessages: (req, res, room) => {
 		return Message.findAll({
 			raw: true,
 			nest: true,

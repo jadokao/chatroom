@@ -1,4 +1,5 @@
 const { Message, User, Room } = require('../../models')
+const { Op } = require('sequelize')
 const messageController = require('../../controllers/messageController')
 
 module.exports = (io, socket) => {
@@ -20,7 +21,12 @@ module.exports = (io, socket) => {
 		const roomInfo = await Room.findOrCreate({
 			raw: true,
 			nest: true,
-			where: { userOneId: user.user1.id, userTwoId: user.user2.id }
+			where: {
+				[Op.or]: [
+					{ userOneId: user.user1.id, userTwoId: user.user2.id },
+					{ userOneId: user.user2.id, userTwoId: user.user1.id }
+				]
+			}
 		})
 		const room = roomInfo[0].id
 
@@ -35,7 +41,12 @@ module.exports = (io, socket) => {
 		const roomInfo = await Room.findOrCreate({
 			raw: true,
 			nest: true,
-			where: { userOneId: message.user1.id, userTwoId: message.user2.id }
+			where: {
+				[Op.or]: [
+					{ userOneId: user.user1.id, userTwoId: user.user2.id },
+					{ userOneId: user.user2.id, userTwoId: user.user1.id }
+				]
+			}
 		})
 		const room = roomInfo[0].id
 
@@ -68,7 +79,12 @@ module.exports = (io, socket) => {
 		const roomInfo = await Room.findOrCreate({
 			raw: true,
 			nest: true,
-			where: { userOneId: user.user1.id, userTwoId: user.user2.id }
+			where: {
+				[Op.or]: [
+					{ userOneId: user.user1.id, userTwoId: user.user2.id },
+					{ userOneId: user.user2.id, userTwoId: user.user1.id }
+				]
+			}
 		})
 		const room = roomInfo[0].id
 		io.to(room).emit('leaveRoom', profile)
